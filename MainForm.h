@@ -7,21 +7,34 @@
 
 #include "DBH.h"
 
-public ref class MainForm : public System::Windows::Forms::Form
+using namespace System;
+using namespace System::Windows::Forms;
+
+public ref class MainForm : public Form
 {
 private:
-    System::Windows::Forms::Button^ pButton;
-    System::Windows::Forms::Button^ aButton;
-    System::Windows::Forms::Button^ gButton;
-    System::Windows::Forms::Button^ xButton;
-    System::Windows::Forms::Button^ managementButton;
-    System::Windows::Forms::DataGridView^ resultsGrid;
+    Button^ pButton;
+    Button^ aButton;
+    Button^ gButton;
+    Button^ xButton;
+    Button^ managementButton;
+    DataGridView^ resultsGrid;
+    Button^ report1Button;
+    Button^ report2Button;
+    TextBox^ report1Output;
+    TextBox^ report2Output;
+    Label^ report1InputLabel;
+    TextBox^ report1Input;
+    Label^ report2InputLabel;
+    TextBox^ report2Input;
     DBH^ dbh;
 
 public:
     MainForm(DBH^ db);
 
 private:
-    void OnDBDataButtonClick(System::Object^ sender, System::EventArgs^ e);
-    void OnDBInitialization(System::Object^ sender, System::EventArgs^ e);
+    void OnDBDataButtonClick(Object^ sender, EventArgs^ e);
+    void OnDBInitialization(Object^ sender, EventArgs^ e);
+    void OnGroupReportClick(Object^ sender, EventArgs^ e);
+    void OnProjectReportClick(Object^ sender, EventArgs^ e);
 };

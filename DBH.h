@@ -3,6 +3,9 @@
 #using <System.dll>
 #using <System.Data.dll>
 
+using namespace System;
+using namespace System::Data::Odbc;
+
 enum SQLRequestType
 {
 	SQL_SELECT_PERSONS,
@@ -11,24 +14,21 @@ enum SQLRequestType
 	SQL_SELECT_PROJECTS
 };
 
-// Класс-обёртка над соединением с БД.
-// Соединение открывается один раз в конструкторе при запуске программы,
 public ref class DBH
 {
 private:
-    System::Data::Odbc::OdbcConnection^ connection;
+    OdbcConnection^ connection;
 
 public:
-    DBH(System::String^ connectionString);
+    DBH(String^ connectionString);
     
-	System::Data::Odbc::OdbcConnection^ GetConnection();
-	void ExecuteManyStatements(System::String^ statements);
+	OdbcConnection^ GetConnection();
+	void ExecuteManyStatements(String^ statements);
 	void Close();
 
-	System::String^ GetSQL(SQLRequestType t);
-	System::String^ GetInitSQL();
-	System::String^ CreateManyPersons();
-	System::String^ CreateManyActions();
-	System::String^ CreateProjectsAndGroups();
-	
+	String^ GetSQL(SQLRequestType t);
+	String^ GetInitSQL();
+	String^ CreateManyPersons();
+	String^ CreateManyActions();
+	String^ CreateProjectsAndGroups();
 };

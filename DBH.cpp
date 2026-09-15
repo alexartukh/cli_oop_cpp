@@ -30,7 +30,7 @@ String^ DBH::GetSQL(SQLRequestType t)
 	if (t == SQL_SELECT_PERSONS)
 	{
 		return R"(
-			SELECT p.id AS `person id`, p.firstname, p.lastname, g.groupname, s.shortname AS `person status`
+			SELECT p.id AS `person id`, p.firstname, p.lastname, g.groupname, s.shortname, p.boss_id
 			FROM persons AS p 
 			INNER JOIN statuses AS s ON p.status = s.id
 			INNER JOIN `groups` AS g ON p.group_id = g.id
@@ -105,13 +105,13 @@ String^ DBH::GetInitSQL()
 		DROP TABLE IF EXISTS `activities`;
 		CREATE TABLE `activities` (
 			`id` int NOT NULL,
-			`submit_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			`type` ENUM('NORMAL', 'BUSINESS_TRIP', 'OVERTIME') NOT NULL DEFAULT 'NORMAL',
 			`hours` int NOT NULL,
 			`owner` int NOT NULL,
 			`project_id` int NOT NULL,
 			`description` text NOT NULL,
 			UNIQUE KEY `unique_activity_id` (`id`)
-		) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 		DROP TABLE IF EXISTS `persons`;
 		CREATE TABLE `persons` (
@@ -120,8 +120,9 @@ String^ DBH::GetInitSQL()
 			`lastname` varchar(100) NOT NULL,
 			`group_id` int NOT NULL,
 			`status` int NOT NULL,
+			`boss_id` int NOT NULL DEFAULT 0,
 			UNIQUE KEY `unique_person_id` (`id`)
-		) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 		DROP TABLE IF EXISTS `groups`;
 		CREATE TABLE `groups` (
@@ -129,7 +130,7 @@ String^ DBH::GetInitSQL()
 			`groupname` varchar(100) NOT NULL,
 			`description` text NOT NULL,
 			UNIQUE KEY `unique_group_id` (`id`)
-		) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 		DROP TABLE IF EXISTS `projects`;
 		CREATE TABLE `projects` (
@@ -137,7 +138,7 @@ String^ DBH::GetInitSQL()
 			`projectname` varchar(100) NOT NULL,
 			`description` text NOT NULL,
 			UNIQUE KEY `unique_project_id` (`id`)
-		) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 	)";
 }
 
@@ -192,15 +193,21 @@ String^ DBH::CreateManyPersons()
 	int pk = 1;
 	for (int g = 1; g <= groups; g++)
 	{
+		int bossID = 0;
 		for (int i = 1; i <= personsPerGroup; i++)
 		{
+			if (i == 1) {
+				bossID = pk;
+			}
+
 			list->Add(
 				String::Format(
-					"INSERT INTO `persons` (id, firstname, lastname, group_id, status) VALUES ({0}, '{1}', '{2}', {3}, 1)",
+					"INSERT INTO `persons` (id, firstname, lastname, group_id, status, boss_id) VALUES ({0}, '{1}', '{2}', {3}, 1, {4})",
 					pk,
 					"FN_" + g + "_" + rnd->Next(10000),
 					"LN_" + g + "_" + rnd->Next(10000),
-					g
+					g,
+					i > 1 ? bossID : 0
 				)
 			);
 			pk++;

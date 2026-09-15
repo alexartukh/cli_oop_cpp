@@ -24,30 +24,30 @@ MainForm::MainForm(DBH^ db)
 
 	// Кнопка персон
 	pButton = gcnew Button();
-	pButton->Text = "Персоны";
+	pButton->Text = "Выьрать из БД";
 	pButton->Size = System::Drawing::Size(120, 40);
 	pButton->Location = Point(10, 10);
 	pButton->Tag = 1;
 
 	// Кнопка активностей
 	aButton = gcnew Button();
-	aButton->Text = "Активности";
+	aButton->Text = "Выьрать из БД";
 	aButton->Size = System::Drawing::Size(120, 40);
-	aButton->Location = Point(130, 10);
+	aButton->Location = Point(10, 10);
 	aButton->Tag = 2;
 
 	// Кнопка групп
 	gButton = gcnew Button();
-	gButton->Text = "Группы";
+	gButton->Text = "Выьрать из БД";
 	gButton->Size = System::Drawing::Size(120, 40);
-	gButton->Location = Point(250, 10);
+	gButton->Location = Point(10, 10);
 	gButton->Tag = 3;
 
 	// Кнопка проектов
 	xButton = gcnew Button();
-	xButton->Text = "Проекты";
+	xButton->Text = "Выьрать из БД";
 	xButton->Size = System::Drawing::Size(120, 40);
-	xButton->Location = Point(370, 10);
+	xButton->Location = Point(10, 10);
 	xButton->Tag = 4;
 
 	// Подписываемся на событие клика
@@ -56,17 +56,8 @@ MainForm::MainForm(DBH^ db)
 	gButton->Click += gcnew EventHandler(this, &MainForm::OnDBDataButtonClick);
 	xButton->Click += gcnew EventHandler(this, &MainForm::OnDBDataButtonClick);
 
-	// Панель сверху для кнопок — фиксированной высоты, прибита к верху страницы
-	Panel^ buttonPanel = gcnew Panel();
-	buttonPanel->Dock = DockStyle::Top;
-	buttonPanel->Height = 60;
-	buttonPanel->Controls->Add(pButton);
-	buttonPanel->Controls->Add(aButton);
-	buttonPanel->Controls->Add(gButton);
-	buttonPanel->Controls->Add(xButton);
-
-	// Сетка результатов — заполняет всё оставшееся место на странице
-	// (Dock проще и надёжнее, чем вручную считать Size/Anchor от ClientSize)
+	// Сетка результатов — заполняет всё оставшееся место на странице.
+	// Общая для всех 4 кнопок, лежит ВНЕ внутреннего TabControl.
 	resultsGrid = gcnew DataGridView();
 	resultsGrid->Dock = DockStyle::Fill;
 	resultsGrid->ReadOnly = true;
@@ -75,27 +66,126 @@ MainForm::MainForm(DBH^ db)
 	resultsGrid->MultiSelect = false; // за раз можно выделить только одну строку
 
 	// Вертикальная панель слева — фиксированной ширины 200px, во всю высоту страницы.
-	// Пока пустая, добавил рамку, чтобы было видно её границы.
 	Panel^ leftPanel = gcnew Panel();
 	leftPanel->Dock = DockStyle::Left;
-	leftPanel->Width = 200;
+	leftPanel->Width = 400;
 	leftPanel->BorderStyle = BorderStyle::FixedSingle;
+
+	// Внутри левой панели — свой TabControl на 4 вкладки,
+	// на каждой из которых лежит одна из 4 кнопок.
+	TabControl^ leftTabs = gcnew TabControl();
+	leftTabs->Dock = DockStyle::Fill;
+
+	TabPage^ personsTab = gcnew TabPage("Персоны");
+	personsTab->Controls->Add(pButton);
+
+	TabPage^ activitiesTab = gcnew TabPage("Активности");
+	activitiesTab->Controls->Add(aButton);
+
+	TabPage^ groupsTab = gcnew TabPage("Группы");
+	groupsTab->Controls->Add(gButton);
+
+	TabPage^ projectsTab = gcnew TabPage("Проекты");
+	projectsTab->Controls->Add(xButton);
+
+	leftTabs->TabPages->Add(personsTab);
+	leftTabs->TabPages->Add(activitiesTab);
+	leftTabs->TabPages->Add(groupsTab);
+	leftTabs->TabPages->Add(projectsTab);
+
+	leftPanel->Controls->Add(leftTabs);
 
 	// Порядок важен: контрол, добавленный последним, оказывается ближе к краю
 	// (занимает свою полосу первым, от исходного размера страницы).
-	// Сетка (Fill) — первая, кнопочная панель (Top) — вторая (внутри оставшейся
-	// после leftPanel ширины), левая панель (Left) — последняя.
+	// Сетка (Fill) — первая, левая панель (Left) — последняя.
 	mainPage->Controls->Add(resultsGrid);
-	mainPage->Controls->Add(buttonPanel);
 	mainPage->Controls->Add(leftPanel);
 
 	tabs->TabPages->Add(mainPage);
 
-	// ---------- Ещё 4 пустые закладки ----------
+	// ---------- пустые закладки ----------
 	tabs->TabPages->Add(gcnew TabPage("Управление группами"));
 	tabs->TabPages->Add(gcnew TabPage("Управление проектами"));
-	tabs->TabPages->Add(gcnew TabPage("Отчеты по группам"));
-	tabs->TabPages->Add(gcnew TabPage("Отчеты по проектам"));
+
+	// ---------- отчеты 1 ----------
+	TabPage^ reportTab1 = gcnew TabPage("Отчеты по группам");
+
+	report1Button = gcnew Button();
+	report1Button->Text = "Создать отчет";
+	report1Button->Size = System::Drawing::Size(220, 40);
+	report1Button->Location = Point(10, 10);
+	report1Button->Click += gcnew EventHandler(this, &MainForm::OnGroupReportClick);
+
+	// Метка и поле ввода — чуть ниже кнопки
+	report1InputLabel = gcnew Label();
+	report1InputLabel->Text = "Значение:";
+	report1InputLabel->Location = Point(10, 60);
+	report1InputLabel->Size = System::Drawing::Size(90, 20);
+
+	report1Input = gcnew TextBox();
+	report1Input->Location = Point(105, 57);
+	report1Input->Size = System::Drawing::Size(285, 20);
+
+	// Панель слева — такой же ширины (400px), как leftPanel на первой вкладке
+	Panel^ report1Panel = gcnew Panel();
+	report1Panel->Dock = DockStyle::Left;
+	report1Panel->Width = 400;
+	report1Panel->Controls->Add(report1Button);
+	report1Panel->Controls->Add(report1InputLabel);
+	report1Panel->Controls->Add(report1Input);
+
+	// Текстовое поле вывода — занимает всю оставшуюся площадь
+	report1Output = gcnew TextBox();
+	report1Output->Multiline = true;
+	report1Output->ReadOnly = true;
+	report1Output->ScrollBars = ScrollBars::Vertical;
+	report1Output->Dock = DockStyle::Fill;
+
+	// Порядок важен: Fill — первая, Left — последняя (см. комментарий на первой вкладке)
+	reportTab1->Controls->Add(report1Output);
+	reportTab1->Controls->Add(report1Panel);
+
+	tabs->TabPages->Add(reportTab1);
+
+	// ---------- отчеты 2 ----------
+	TabPage^ reportTab2 = gcnew TabPage("Отчеты по проектам");
+
+	report2Button = gcnew Button();
+	report2Button->Text = "Создать отчет";
+	report2Button->Size = System::Drawing::Size(220, 40);
+	report2Button->Location = Point(10, 10);
+	report2Button->Click += gcnew EventHandler(this, &MainForm::OnProjectReportClick);
+
+	// Метка и поле ввода — чуть ниже кнопки
+	report2InputLabel = gcnew Label();
+	report2InputLabel->Text = "Значение:";
+	report2InputLabel->Location = Point(10, 60);
+	report2InputLabel->Size = System::Drawing::Size(90, 20);
+
+	report2Input = gcnew TextBox();
+	report2Input->Location = Point(105, 57);
+	report2Input->Size = System::Drawing::Size(285, 20);
+
+	// Панель слева — такой же ширины (400px), как leftPanel на первой вкладке
+	Panel^ report2Panel = gcnew Panel();
+	report2Panel->Dock = DockStyle::Left;
+	report2Panel->Width = 400;
+	report2Panel->Controls->Add(report2Button);
+	report2Panel->Controls->Add(report2InputLabel);
+	report2Panel->Controls->Add(report2Input);
+
+	// Текстовое поле вывода — занимает всю оставшуюся площадь
+	report2Output = gcnew TextBox();
+	report2Output->Multiline = true;
+	report2Output->ReadOnly = true;
+	report2Output->ScrollBars = ScrollBars::Vertical;
+	report2Output->Dock = DockStyle::Fill;
+
+	// Порядок важен: Fill — первая, Left — последняя (см. комментарий на первой вкладке)
+	reportTab2->Controls->Add(report2Output);
+	reportTab2->Controls->Add(report2Panel);
+
+	tabs->TabPages->Add(reportTab2);
 
 	// ---------- закладка менеджмента ----------    
 	TabPage^ managementTab = gcnew TabPage("Настройки");
@@ -114,7 +204,17 @@ MainForm::MainForm(DBH^ db)
 	this->Controls->Add(tabs);
 }
 
-void MainForm::OnDBInitialization(System::Object^ sender, System::EventArgs^ e)
+void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
+{
+	report1Output->AppendText("Первая строка отчёта" + Environment::NewLine);
+}
+
+void MainForm::OnProjectReportClick(Object^ sender, EventArgs^ e)
+{
+	report2Output->AppendText("Первая строка отчёта" + Environment::NewLine);
+}
+
+void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)
 {
 	String^ init = dbh->GetInitSQL();
 	dbh->ExecuteManyStatements(init);
@@ -154,4 +254,3 @@ void MainForm::OnDBDataButtonClick(Object^ sender, EventArgs^ e)
 		MessageBox::Show("Ошибка: " + ex->Message);
 	}
 }
-

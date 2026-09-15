@@ -127,17 +127,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="data\Activity.cpp" />
+    <ClCompile Include="Activity.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="DBH.cpp" />
     <ClCompile Include="MainForm.cpp" />
-    <ClCompile Include="data\Person.cpp" />
+    <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="NotPaid.cpp" />
+    <ClCompile Include="Paid.cpp" />
+    <ClCompile Include="Person.cpp" />
+    <ClCompile Include="Worker.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="data\Activity.h" />
+    <ClInclude Include="Activity.h" />
     <ClInclude Include="DBH.h" />
     <ClInclude Include="MainForm.h" />
-    <ClInclude Include="data\Person.h" />
+    <ClInclude Include="Manager.h" />
+    <ClInclude Include="NotPaid.h" />
+    <ClInclude Include="Paid.h" />
+    <ClInclude Include="Person.h" />
+    <ClInclude Include="Worker.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="db.ini" />
