@@ -63,6 +63,29 @@ String^ DBH::GetSQL(SQLRequestType t)
 			ORDER BY 1
 		)";
 	}
+	else if (t == SQL_SELECT_BOSS_INFO) {
+		return R"(
+			SELECT p.id AS boss_id, COUNT(pp.id) AS sub
+			FROM persons AS p
+			INNER JOIN persons AS pp ON p.id = pp.boss_id
+			WHERE p.boss_id = 0
+			GROUP BY 1
+		)";
+	}
+	else if (t == SQL_REPORT1)
+	{
+		return R"(
+			SELECT p.id AS pid, a.id AS aid, a.hours, a.project_id
+			FROM persons AS p, activities AS a 
+			WHERE a.owner = p.id
+			ORDER BY 1
+		)";
+	}
+	else if (t == SQL_REPORT2)
+	{
+		return R"(
+		)";
+	}
 
 	throw gcnew ArgumentException("This SQLRequestType is not implemented");
 }

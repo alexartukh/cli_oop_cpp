@@ -131,21 +131,21 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="DBH.cpp" />
     <ClCompile Include="MainForm.cpp" />
-    <ClCompile Include="Manager.cpp" />
-    <ClCompile Include="NotPaid.cpp" />
-    <ClCompile Include="Paid.cpp" />
+    <ClCompile Include="PersonManager.cpp" />
+    <ClCompile Include="ActivityNotPaid.cpp" />
+    <ClCompile Include="ActivityPaid.cpp" />
     <ClCompile Include="Person.cpp" />
-    <ClCompile Include="Worker.cpp" />
+    <ClCompile Include="PersonWorker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Activity.h" />
     <ClInclude Include="DBH.h" />
     <ClInclude Include="MainForm.h" />
-    <ClInclude Include="Manager.h" />
-    <ClInclude Include="NotPaid.h" />
-    <ClInclude Include="Paid.h" />
+    <ClInclude Include="PersonManager.h" />
+    <ClInclude Include="ActivityNotPaid.h" />
+    <ClInclude Include="ActivityPaid.h" />
     <ClInclude Include="Person.h" />
-    <ClInclude Include="Worker.h" />
+    <ClInclude Include="PersonWorker.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="db.ini" />

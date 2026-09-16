@@ -8,12 +8,12 @@ using namespace System::Collections::Generic;
 ref class Person
 {
 private:
-	int id;
-	String^ Firstname;
-	String^ Lastname;
+	int pid;
 	List<Activity^>^ aList;
 
 public:
-	Person();
+	Person(int pid);
+	void AddActivity(Activity^ a);
 	Decimal CalculateSalary();
+	String^ GenerateTextReport();
 };	

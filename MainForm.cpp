@@ -1,10 +1,14 @@
 ﻿#include "MainForm.h"
 
+#include "Activity.h"
+#include "Person.h"
+
 using namespace System;
 using namespace System::Windows::Forms;
 using namespace System::Drawing;
 using namespace System::Data;
 using namespace System::Data::Odbc;
+using namespace System::Collections::Generic;
 
 MainForm::MainForm(DBH^ db)
 {
@@ -103,9 +107,9 @@ MainForm::MainForm(DBH^ db)
 
 	tabs->TabPages->Add(mainPage);
 
-	// ---------- пустые закладки ----------
-	tabs->TabPages->Add(gcnew TabPage("Управление группами"));
-	tabs->TabPages->Add(gcnew TabPage("Управление проектами"));
+	//// ---------- пустые закладки ----------
+	//tabs->TabPages->Add(gcnew TabPage("Управление группами"));
+	//tabs->TabPages->Add(gcnew TabPage("Управление проектами"));
 
 	// ---------- отчеты 1 ----------
 	TabPage^ reportTab1 = gcnew TabPage("Отчеты по группам");
@@ -206,12 +210,73 @@ MainForm::MainForm(DBH^ db)
 
 void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
 {
-	report1Output->AppendText("Первая строка отчёта" + Environment::NewLine);
+	report1Output->Clear();
+	Dictionary<int, int>^ subsPerBoss = gcnew Dictionary<int, int>();
+	Dictionary<int, Person^>^ allPersons = gcnew Dictionary<int, Person^>();
+
+	try
+	{
+		// отдельно читаем информацию о том, сколько подчиненных у каждого начальника
+		String^ sql2 = dbh->GetSQL(SQL_SELECT_BOSS_INFO);
+		OdbcCommand^ cmd2 = gcnew OdbcCommand(sql2, dbh->GetConnection());
+		OdbcDataReader^ reader2 = cmd2->ExecuteReader();
+		
+		while (reader2->Read())
+		{
+			int bossId = Convert::ToInt32(reader2["boss_id"]);
+			int sub = Convert::ToInt32(reader2["sub"]);
+
+			subsPerBoss[bossId] = sub;
+
+			//report1Output->AppendText(String::Format("BOSS_ID = {0} SUB = {1} {2}", bossId, sub, Environment::NewLine));
+		}
+
+		// читаем все активности и создаем все нужные объекты
+		String^ sql = dbh->GetSQL(SQL_REPORT1);
+		OdbcCommand^ cmd = gcnew OdbcCommand(sql, dbh->GetConnection());
+		OdbcDataReader^ reader = cmd->ExecuteReader();
+		
+		while (reader->Read())
+		{
+			int pid = Convert::ToInt32(reader["pid"]);
+			int aid = Convert::ToInt32(reader["aid"]);
+			int hours = Convert::ToInt32(reader["hours"]);
+			int projectId = Convert::ToInt32(reader["project_id"]);
+			
+			// добавляем в словарь новую персону, если ее еще нет,
+			// или возвращаем ссылку на существующую
+			Person^ currentPerson;
+			if (allPersons->ContainsKey(pid)) {
+				currentPerson = allPersons[pid];
+			}
+			else {
+				currentPerson = gcnew Person(pid);
+				allPersons->Add(pid, currentPerson);
+			}
+
+			// создаем новую активность в любом случае
+			Activity^ a = gcnew Activity(aid, hours, projectId);
+			currentPerson->AddActivity(a);
+
+			//report1Output->AppendText(String::Format("{0} {1} : H={2} {3}", pid, aid, hours, Environment::NewLine));
+		}
+	}
+	catch (OdbcException^ ex)
+	{
+		MessageBox::Show("Ошибка: " + ex->Message);
+	}
+
+	// отчет о созданных объектах
+	for each (int k in allPersons->Keys) {
+		report1Output->AppendText(
+			allPersons[k]->GenerateTextReport()
+		);
+	}
 }
 
 void MainForm::OnProjectReportClick(Object^ sender, EventArgs^ e)
 {
-	report2Output->AppendText("Первая строка отчёта" + Environment::NewLine);
+	report2Output->AppendText("222222222222222" + Environment::NewLine);
 }
 
 void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)
