@@ -169,12 +169,9 @@ String^ DBH::GetInitSQL()
 // весь код ниже инициализирует пустую БД набором тестовых записей
 //
 
-int projects = 4;
-int groups = 3;
-int personsPerGroup = 20;
-int activitiesPerPerson = 30;
 
-String^ DBH::CreateProjectsAndGroups()
+
+String^ DBH::CreateProjectsAndGroups(int groups, int projects)
 {
 	List<String^>^ list = gcnew List<String^>();
 	
@@ -209,7 +206,7 @@ String^ DBH::CreateProjectsAndGroups()
 	return String::Join(";", list);
 }
 
-String^ DBH::CreateManyPersons()
+String^ DBH::CreateManyPersons(int groups,  int personsPerGroup)
 {
 	List<String^>^ list = gcnew List<String^>();
 	Random^ rnd = gcnew Random();
@@ -241,7 +238,7 @@ String^ DBH::CreateManyPersons()
 }
 
 // каждый юзер имеет activitiesPerPerson активностей, но они распределены рандомно между проектами
-String^ DBH::CreateManyActions()
+String^ DBH::CreateManyActions(int groups, int projects, int personsPerGroup, int activitiesPerPerson)
 {
 	List<String^>^ list = gcnew List<String^>();	
 	Random^ rnd = gcnew Random();

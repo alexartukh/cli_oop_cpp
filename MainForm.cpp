@@ -9,10 +9,13 @@ using namespace System::Drawing;
 using namespace System::Data;
 using namespace System::Data::Odbc;
 using namespace System::Collections::Generic;
+using namespace System::Diagnostics;
+using namespace System::IO;
 
-MainForm::MainForm(DBH^ db)
+MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 {
 	dbh = db;
+	config = cfg;
 
 	// Настройки окна
 	this->Text = gcnew String("SHRMS - Простая система управления персоналом");
@@ -107,10 +110,6 @@ MainForm::MainForm(DBH^ db)
 
 	tabs->TabPages->Add(mainPage);
 
-	//// ---------- пустые закладки ----------
-	//tabs->TabPages->Add(gcnew TabPage("Управление группами"));
-	//tabs->TabPages->Add(gcnew TabPage("Управление проектами"));
-
 	// ---------- отчеты 1 ----------
 	TabPage^ reportTab1 = gcnew TabPage("Отчеты по группам");
 
@@ -195,15 +194,31 @@ MainForm::MainForm(DBH^ db)
 	TabPage^ managementTab = gcnew TabPage("Настройки");
 
 	managementButton = gcnew Button();
-	managementButton->Text = "Инициализация БД";
+	managementButton->Text = "Создать случайную БД";
 	managementButton->Size = System::Drawing::Size(220, 40);
 	managementButton->Location = Point(10, 10);
 
 	managementButton->Click += gcnew EventHandler(this, &MainForm::OnDBInitialization);
 
+	managementButton2 = gcnew Button();
+	managementButton2->Text = "Загрузить БД из файла";
+	managementButton2->Size = System::Drawing::Size(220, 40);
+	managementButton2->Location = Point(10, 60);
+	managementButton2->Click += gcnew EventHandler(this, &MainForm::OnManagementLoadButtonClick);
+
+	managementButton3 = gcnew Button();
+	managementButton3->Text = "Сохранить БД в файл";
+	managementButton3->Size = System::Drawing::Size(220, 40);
+	managementButton3->Location = Point(10, 110);
+	managementButton3->Click += gcnew EventHandler(this, &MainForm::OnManagementSaveButtonClick);
+
 	tabs->TabPages->Add(managementTab);
 
 	managementTab->Controls->Add(managementButton);
+	managementTab->Controls->Add(managementButton2);
+	managementTab->Controls->Add(managementButton3);
+	managementTab->Controls->Add(fileNameLabel);
+	managementTab->Controls->Add(fileNameInput);
 
 	this->Controls->Add(tabs);
 }
@@ -284,16 +299,88 @@ void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)
 	String^ init = dbh->GetInitSQL();
 	dbh->ExecuteManyStatements(init);
 
-	String^ init2 = dbh->CreateManyPersons();
+	String^ init2 = dbh->CreateManyPersons(
+		Convert::ToInt32(this->config["groups"]),
+		Convert::ToInt32(this->config["personsPerGroup"])
+	);
 	dbh->ExecuteManyStatements(init2);
 
-	String^ init3 = dbh->CreateManyActions();
+	String^ init3 = dbh->CreateManyActions(
+		Convert::ToInt32(this->config["groups"]),
+		Convert::ToInt32(this->config["projects"]),
+		Convert::ToInt32(this->config["personsPerGroup"]),
+		Convert::ToInt32(this->config["activitiesPerPerson"])
+	);
 	dbh->ExecuteManyStatements(init3);
 
-	String^ init4 = dbh->CreateProjectsAndGroups();
+	String^ init4 = dbh->CreateProjectsAndGroups(
+		Convert::ToInt32(this->config["groups"]),
+		Convert::ToInt32(this->config["projects"])
+	);
 	dbh->ExecuteManyStatements(init4);
 
-	MessageBox::Show("DB initialization has been finished");
+	MessageBox::Show("DB has been initialized by random data");
+}
+
+void MainForm::OnManagementLoadButtonClick(Object^ sender, EventArgs^ e)
+{
+	OpenFileDialog^ dialog = gcnew OpenFileDialog();
+	dialog->Filter = "SQL files (*.sql)|*.sql|All files (*.*)|*.*";
+	dialog->Title = "Загрузить БД из файла";
+
+	if (dialog->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+	{
+		ProcessStartInfo^ psi = gcnew ProcessStartInfo();
+		psi->FileName = config["mysql"];
+		if (config["password"] != "")
+		{
+			psi->Arguments = String::Format("-u {0} -p{1} {2}", config["user"], config["password"], config["database"]);
+		}
+		else {
+			psi->Arguments = String::Format("-u {0} {1}", config["user"], config["database"]);
+		}
+		psi->RedirectStandardInput = true;   // сюда сами запишем содержимое файла
+		psi->UseShellExecute = false;        // обязательно false для перенаправления
+		psi->CreateNoWindow = true;
+
+		Process^ process = Process::Start(psi);
+		process->StandardInput->Write(File::ReadAllText(dialog->FileName));
+		process->StandardInput->Close();     // сигнал mysql, что ввод закончен
+		process->WaitForExit();
+
+		MessageBox::Show("БД загружена из файла " + dialog->FileName);
+	}
+}
+
+void MainForm::OnManagementSaveButtonClick(Object^ sender, EventArgs^ e)
+{
+	SaveFileDialog^ dialog = gcnew SaveFileDialog();
+	dialog->Filter = "SQL files (*.sql)|*.sql|All files (*.*)|*.*";
+	dialog->Title = "Сохранить БД в файл";
+
+	if (dialog->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+	{
+		ProcessStartInfo^ psi = gcnew ProcessStartInfo();
+		psi->FileName = config["mysqldump"];
+		if (config["password"] != "")
+		{
+			psi->Arguments = String::Format("-u {0} -p{1} {2}", config["user"], config["password"], config["database"]);
+		}
+		else {
+			psi->Arguments = String::Format("-u {0} {1}", config["user"], config["database"]);
+		}
+		psi->RedirectStandardOutput = true;   // перехватываем stdout, чтобы записать его в файл
+		psi->UseShellExecute = false;         // обязательно false, если хотим перехватывать вывод
+		psi->CreateNoWindow = true;           // не показывать окно консоли
+
+		Process^ process = Process::Start(psi);
+		String^ output = process->StandardOutput->ReadToEnd();
+		process->WaitForExit();
+
+		File::WriteAllText(dialog->FileName, output);
+
+		MessageBox::Show("БД сохранена в файле " + dialog->FileName);
+	}
 }
 
 void MainForm::OnDBDataButtonClick(Object^ sender, EventArgs^ e)

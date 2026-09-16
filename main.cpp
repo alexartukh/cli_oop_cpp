@@ -78,7 +78,7 @@ int main(array<String^>^ args)
         return 1;
     }
 
-    Application::Run(gcnew MainForm(dbh));
+    Application::Run(gcnew MainForm(dbh, config));
 
     dbh->Close();
     return 0;

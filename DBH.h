@@ -31,7 +31,7 @@ public:
 
 	String^ GetSQL(SQLRequestType t);
 	String^ GetInitSQL();
-	String^ CreateManyPersons();
-	String^ CreateManyActions();
-	String^ CreateProjectsAndGroups();
+	String^ CreateManyPersons(int groups, int personsPerGroup);
+	String^ CreateManyActions(int groups, int projects, int personsPerGroup, int activitiesPerPerson);
+	String^ CreateProjectsAndGroups(int groups, int projects);
 };
