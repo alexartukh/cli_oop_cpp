@@ -1,7 +1,12 @@
 ﻿#include "MainForm.h"
 
 #include "Activity.h"
+#include "ActivityPaid.h"
+#include "ActivityNotPaid.h"
+
 #include "Person.h"
+#include "PersonWorker.h"
+#include "PersonManager.h"
 
 using namespace System;
 using namespace System::Windows::Forms;
@@ -31,29 +36,29 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 
 	// Кнопка персон
 	pButton = gcnew Button();
-	pButton->Text = "Выьрать из БД";
-	pButton->Size = System::Drawing::Size(120, 40);
+	pButton->Text = "Выбрать / обновить";
+	pButton->Size = System::Drawing::Size(370, 40);
 	pButton->Location = Point(10, 10);
 	pButton->Tag = 1;
 
 	// Кнопка активностей
 	aButton = gcnew Button();
-	aButton->Text = "Выьрать из БД";
-	aButton->Size = System::Drawing::Size(120, 40);
+	aButton->Text = "Выбрать / обновить";
+	aButton->Size = System::Drawing::Size(370, 40);
 	aButton->Location = Point(10, 10);
 	aButton->Tag = 2;
 
 	// Кнопка групп
 	gButton = gcnew Button();
-	gButton->Text = "Выьрать из БД";
-	gButton->Size = System::Drawing::Size(120, 40);
+	gButton->Text = "Выбрать / обновить";
+	gButton->Size = System::Drawing::Size(370, 40);
 	gButton->Location = Point(10, 10);
 	gButton->Tag = 3;
 
 	// Кнопка проектов
 	xButton = gcnew Button();
-	xButton->Text = "Выьрать из БД";
-	xButton->Size = System::Drawing::Size(120, 40);
+	xButton->Text = "Выбрать / обновить";
+	xButton->Size = System::Drawing::Size(370, 40);
 	xButton->Location = Point(10, 10);
 	xButton->Tag = 4;
 
@@ -67,10 +72,11 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	// Общая для всех 4 кнопок, лежит ВНЕ внутреннего TabControl.
 	resultsGrid = gcnew DataGridView();
 	resultsGrid->Dock = DockStyle::Fill;
-	resultsGrid->ReadOnly = true;
+	resultsGrid->ReadOnly = false; // разрешаем редактирование ячеек — изменения сохраняются в БД в OnResultsGridCellEndEdit
 	resultsGrid->AllowUserToAddRows = false;
 	resultsGrid->SelectionMode = DataGridViewSelectionMode::FullRowSelect; // выделяем только целыми строками, не колонками/ячейками
 	resultsGrid->MultiSelect = false; // за раз можно выделить только одну строку
+	resultsGrid->CellEndEdit += gcnew DataGridViewCellEventHandler(this, &MainForm::OnResultsGridCellEndEdit);
 
 	// Вертикальная панель слева — фиксированной ширины 200px, во всю высоту страницы.
 	Panel^ leftPanel = gcnew Panel();
@@ -115,19 +121,21 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 
 	report1Button = gcnew Button();
 	report1Button->Text = "Создать отчет";
-	report1Button->Size = System::Drawing::Size(220, 40);
+	report1Button->Size = System::Drawing::Size(380, 40);
 	report1Button->Location = Point(10, 10);
-	report1Button->Click += gcnew EventHandler(this, &MainForm::OnGroupReportClick);
+	report1Button->Click += gcnew EventHandler(this, &MainForm::OnReportClick);
+	report1Button->Tag = 1;
 
 	// Метка и поле ввода — чуть ниже кнопки
 	report1InputLabel = gcnew Label();
-	report1InputLabel->Text = "Значение:";
+	report1InputLabel->Text = "ID группы";
 	report1InputLabel->Location = Point(10, 60);
 	report1InputLabel->Size = System::Drawing::Size(90, 20);
 
 	report1Input = gcnew TextBox();
 	report1Input->Location = Point(105, 57);
 	report1Input->Size = System::Drawing::Size(285, 20);
+	report1Input->Text = "1";
 
 	// Панель слева — такой же ширины (400px), как leftPanel на первой вкладке
 	Panel^ report1Panel = gcnew Panel();
@@ -143,6 +151,10 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	report1Output->ReadOnly = true;
 	report1Output->ScrollBars = ScrollBars::Vertical;
 	report1Output->Dock = DockStyle::Fill;
+	// Полное имя System::Drawing::Font обязательно: у Control (через Form)
+	// есть собственное свойство Font, которое иначе перекрывает тип при поиске без квалификации
+	// (та же история, что раньше была с Size и DialogResult).
+	report1Output->Font = gcnew System::Drawing::Font("Consolas", 14);
 
 	// Порядок важен: Fill — первая, Left — последняя (см. комментарий на первой вкладке)
 	reportTab1->Controls->Add(report1Output);
@@ -155,19 +167,21 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 
 	report2Button = gcnew Button();
 	report2Button->Text = "Создать отчет";
-	report2Button->Size = System::Drawing::Size(220, 40);
+	report2Button->Size = System::Drawing::Size(380, 40);
 	report2Button->Location = Point(10, 10);
-	report2Button->Click += gcnew EventHandler(this, &MainForm::OnProjectReportClick);
+	report2Button->Click += gcnew EventHandler(this, &MainForm::OnReportClick);
+	report2Button->Tag = 2;
 
 	// Метка и поле ввода — чуть ниже кнопки
 	report2InputLabel = gcnew Label();
-	report2InputLabel->Text = "Значение:";
+	report2InputLabel->Text = "ID проекта";
 	report2InputLabel->Location = Point(10, 60);
 	report2InputLabel->Size = System::Drawing::Size(90, 20);
 
 	report2Input = gcnew TextBox();
 	report2Input->Location = Point(105, 57);
 	report2Input->Size = System::Drawing::Size(285, 20);
+	report2Input->Text = "1";
 
 	// Панель слева — такой же ширины (400px), как leftPanel на первой вкладке
 	Panel^ report2Panel = gcnew Panel();
@@ -183,6 +197,7 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	report2Output->ReadOnly = true;
 	report2Output->ScrollBars = ScrollBars::Vertical;
 	report2Output->Dock = DockStyle::Fill;
+	report2Output->Font = gcnew System::Drawing::Font("Consolas", 14);
 
 	// Порядок важен: Fill — первая, Left — последняя (см. комментарий на первой вкладке)
 	reportTab2->Controls->Add(report2Output);
@@ -195,20 +210,20 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 
 	managementButton = gcnew Button();
 	managementButton->Text = "Создать случайную БД";
-	managementButton->Size = System::Drawing::Size(220, 40);
+	managementButton->Size = System::Drawing::Size(380, 40);
 	managementButton->Location = Point(10, 10);
 
 	managementButton->Click += gcnew EventHandler(this, &MainForm::OnDBInitialization);
 
 	managementButton2 = gcnew Button();
 	managementButton2->Text = "Загрузить БД из файла";
-	managementButton2->Size = System::Drawing::Size(220, 40);
+	managementButton2->Size = System::Drawing::Size(380, 40);
 	managementButton2->Location = Point(10, 60);
 	managementButton2->Click += gcnew EventHandler(this, &MainForm::OnManagementLoadButtonClick);
 
 	managementButton3 = gcnew Button();
 	managementButton3->Text = "Сохранить БД в файл";
-	managementButton3->Size = System::Drawing::Size(220, 40);
+	managementButton3->Size = System::Drawing::Size(380, 40);
 	managementButton3->Location = Point(10, 110);
 	managementButton3->Click += gcnew EventHandler(this, &MainForm::OnManagementSaveButtonClick);
 
@@ -223,9 +238,20 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	this->Controls->Add(tabs);
 }
 
-void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
+void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 {
-	report1Output->Clear();
+	Button^ b = safe_cast<Button^>(sender);
+	String^ sql = nullptr;
+
+	if (b->Tag->Equals(1)) {
+		report1Output->Clear();
+		sql = dbh->GetSQL(SQL_REPORT1);
+	}
+	if (b->Tag->Equals(2)) {
+		report2Output->Clear();
+		sql = dbh->GetSQL(SQL_REPORT2);
+	}
+
 	Dictionary<int, int>^ subsPerBoss = gcnew Dictionary<int, int>();
 	Dictionary<int, Person^>^ allPersons = gcnew Dictionary<int, Person^>();
 
@@ -242,13 +268,11 @@ void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
 			int sub = Convert::ToInt32(reader2["sub"]);
 
 			subsPerBoss[bossId] = sub;
-
-			//report1Output->AppendText(String::Format("BOSS_ID = {0} SUB = {1} {2}", bossId, sub, Environment::NewLine));
 		}
 
-		// читаем все активности и создаем все нужные объекты
-		String^ sql = dbh->GetSQL(SQL_REPORT1);
+		// читаем все активности и создаем все нужные объекты	
 		OdbcCommand^ cmd = gcnew OdbcCommand(sql, dbh->GetConnection());
+		cmd->Parameters->AddWithValue("filter", report1Input->Text);
 		OdbcDataReader^ reader = cmd->ExecuteReader();
 		
 		while (reader->Read())
@@ -257,7 +281,11 @@ void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
 			int aid = Convert::ToInt32(reader["aid"]);
 			int hours = Convert::ToInt32(reader["hours"]);
 			int projectId = Convert::ToInt32(reader["project_id"]);
-			
+			int gid = Convert::ToInt32(reader["group_id"]);
+			String^ fn = reader["firstname"]->ToString();
+			String^ ln = reader["lastname"]->ToString();
+			String^ type = reader["type"]->ToString();
+
 			// добавляем в словарь новую персону, если ее еще нет,
 			// или возвращаем ссылку на существующую
 			Person^ currentPerson;
@@ -265,15 +293,32 @@ void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
 				currentPerson = allPersons[pid];
 			}
 			else {
-				currentPerson = gcnew Person(pid);
+				if (subsPerBoss->ContainsKey(pid)) 
+				{
+					currentPerson = gcnew PersonManager(pid, gid, fn, ln);
+				}
+				else
+				{
+					currentPerson = gcnew PersonWorker(pid, gid, fn, ln);
+				}
+				
 				allPersons->Add(pid, currentPerson);
 			}
 
 			// создаем новую активность в любом случае
-			Activity^ a = gcnew Activity(aid, hours, projectId);
+			// используем разные классы в зависимости от типа активности
+			Activity^ a;
+			if (type->Equals("NORMAL") || type->Equals("BUSINESS_TRIP") || type->Equals("OVERTIME") || type->Equals("PAID_VACATION")) {
+				a = gcnew ActivityPaid(aid, hours, projectId);
+			}
+			else if (type->Equals("BENCH") || type->Equals("NOT_PAID_VACATION")) {
+				a = gcnew ActivityNotPaid(aid, hours, projectId);
+			}
+			else {
+				a = gcnew Activity(aid, hours, projectId);
+			}
+			
 			currentPerson->AddActivity(a);
-
-			//report1Output->AppendText(String::Format("{0} {1} : H={2} {3}", pid, aid, hours, Environment::NewLine));
 		}
 	}
 	catch (OdbcException^ ex)
@@ -281,17 +326,16 @@ void MainForm::OnGroupReportClick(Object^ sender, EventArgs^ e)
 		MessageBox::Show("Ошибка: " + ex->Message);
 	}
 
-	// отчет о созданных объектах
-	for each (int k in allPersons->Keys) {
-		report1Output->AppendText(
-			allPersons[k]->GenerateTextReport()
-		);
+	if (b->Tag->Equals(1)) {
+		for each (int k in allPersons->Keys) {
+			report1Output->AppendText(allPersons[k]->ToString());
+		}
 	}
-}
-
-void MainForm::OnProjectReportClick(Object^ sender, EventArgs^ e)
-{
-	report2Output->AppendText("222222222222222" + Environment::NewLine);
+	if (b->Tag->Equals(2)) {
+		for each (int k in allPersons->Keys) {
+			report2Output->AppendText(allPersons[k]->ToString());
+		}
+	}
 }
 
 void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)
@@ -387,22 +431,90 @@ void MainForm::OnDBDataButtonClick(Object^ sender, EventArgs^ e)
 {
 	Button^ b = safe_cast<Button^>(sender);
 	String^ sql = nullptr;
-	if (b->Tag->Equals(1)) sql = dbh->GetSQL(SQL_SELECT_PERSONS);
-	if (b->Tag->Equals(2)) sql = dbh->GetSQL(SQL_SELECT_ACTIVITIES);
-	if (b->Tag->Equals(3)) sql = dbh->GetSQL(SQL_SELECT_GROUPS);
-	if (b->Tag->Equals(4)) sql = dbh->GetSQL(SQL_SELECT_PROJECTS);
+	// Имя таблицы нужно отдельно от SQL-запроса — используем его в OnResultsGridCellEndEdit
+	// для формирования UPDATE. `groups` в обратных кавычках, т.к. это зарезервированное слово MySQL.
+	if (b->Tag->Equals(1)) { sql = dbh->GetSQL(SQL_SELECT_PERSONS); resultsTableName = "persons"; }
+	if (b->Tag->Equals(2)) { sql = dbh->GetSQL(SQL_SELECT_ACTIVITIES); resultsTableName = "activities"; }
+	if (b->Tag->Equals(3)) { sql = dbh->GetSQL(SQL_SELECT_GROUPS); resultsTableName = "`groups`"; }
+	if (b->Tag->Equals(4)) { sql = dbh->GetSQL(SQL_SELECT_PROJECTS); resultsTableName = "projects"; }
 	Console::WriteLine(sql);
 
 	try
 	{
-		OdbcDataAdapter^ adapter = gcnew OdbcDataAdapter(sql, dbh->GetConnection());
-		DataTable^ table = gcnew DataTable();
-		adapter->Fill(table);
+		// table держим как поле класса (resultsTable), а не локальную переменную —
+		// он должен быть жив к моменту CellEndEdit, где мы читаем из него
+		// оригинальное (полученное из БД) значение id для WHERE.
+		//
+		// Раньше здесь использовался OdbcCommandBuilder для автогенерации UPDATE,
+		// но ODBC-драйвер MySQL не всегда отдаёт корректную информацию о ключах,
+		// из-за чего автосгенерированный UPDATE либо не находит нужную строку
+		// (WHERE строится по ВСЕМ колонкам с их старыми значениями), либо не
+		// применяется вовсе — без явной ошибки. Поэтому UPDATE теперь формируется
+		// вручную в OnResultsGridCellEndEdit.
+		resultsAdapter = gcnew OdbcDataAdapter(sql, dbh->GetConnection());
 
-		resultsGrid->DataSource = table;
+		resultsTable = gcnew DataTable();
+		resultsAdapter->Fill(resultsTable);
+
+		resultsGrid->DataSource = resultsTable;
+
+		// id — первичный ключ, редактировать его через сетку нельзя (см. UPDATE ниже,
+		// который всегда ищет строку по id — изменить сам id таким способом не получится).
+		if (resultsGrid->Columns->Contains("id"))
+		{
+			resultsGrid->Columns["id"]->ReadOnly = true;
+		}
 	}
 	catch (OdbcException^ ex)
 	{
 		MessageBox::Show("Ошибка: " + ex->Message);
+	}
+}
+
+void MainForm::OnResultsGridCellEndEdit(Object^ sender, DataGridViewCellEventArgs^ e)
+{
+	if (resultsTable == nullptr || resultsTableName == nullptr)
+	{
+		return;
+	}
+
+	DataRow^ row = resultsTable->Rows[e->RowIndex];
+	String^ columnName = resultsTable->Columns[e->ColumnIndex]->ColumnName;
+
+	// На случай, если колонка id всё же оказалась редактируемой (страховка,
+	// основная защита — resultsGrid->Columns["id"]->ReadOnly в OnDBDataButtonClick).
+	if (columnName->Equals("id", StringComparison::OrdinalIgnoreCase))
+	{
+		return;
+	}
+
+	// Значение id берём из ОРИГИНАЛЬНОЙ версии строки (той, что была получена из БД),
+	// а не из текущей — так WHERE всегда указывает на правильную запись, даже если
+	// в этой строке уже редактировались другие поля.
+	Object^ idValue = row[resultsTable->Columns["id"], DataRowVersion::Original];
+	Object^ newValue = row[columnName];
+
+	String^ sql = String::Format("UPDATE {0} SET {1} = ? WHERE id = ?", resultsTableName, columnName);
+
+	try
+	{
+		OdbcCommand^ cmd = gcnew OdbcCommand(sql, dbh->GetConnection());
+		cmd->Parameters->AddWithValue("value", newValue);
+		cmd->Parameters->AddWithValue("id", idValue);
+
+		int affected = cmd->ExecuteNonQuery();
+		if (affected == 0)
+		{
+			MessageBox::Show("Запись не найдена, изменение не сохранено");
+			return;
+		}
+
+		// Фиксируем строку: "оригинальное" значение id (и остальных полей) обновляется
+		// до текущего, чтобы следующее редактирование этой же строки снова работало верно.
+		row->AcceptChanges();
+	}
+	catch (OdbcException^ ex)
+	{
+		MessageBox::Show("Ошибка сохранения: " + ex->Message);
 	}
 }

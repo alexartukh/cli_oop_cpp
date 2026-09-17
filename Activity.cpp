@@ -7,8 +7,7 @@ Activity::Activity(int aid, int hours, int projectId)
 	this->projectId = projectId;
 }
 
-// смысл активности в том, чтобы она возвращала количество потраченных часов
-int Activity::GetValue()
+String^ Activity::ToString()
 {
-	return this->hours;
+	return String::Format("{0}", this->hours);
 }

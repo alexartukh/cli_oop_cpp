@@ -4,12 +4,15 @@
 #using <System.Windows.Forms.dll>
 #using <System.Drawing.dll>
 #using <System.Data.dll>
+#using <System.Xml.dll>
 
 #include "DBH.h"
 
 using namespace System;
 using namespace System::Windows::Forms;
 using namespace System::Collections::Generic;
+using namespace System::Data;
+using namespace System::Data::Odbc;
 
 public ref class MainForm : public Form
 {
@@ -34,6 +37,9 @@ private:
     TextBox^ report2Input;
     DBH^ dbh;
     Dictionary<String^, String^>^ config;
+    OdbcDataAdapter^ resultsAdapter;
+    DataTable^ resultsTable;
+    String^ resultsTableName; // имя таблицы в БД для текущей выборки — нужно, чтобы вручную сформировать UPDATE
 
 public:
     MainForm(DBH^ db, Dictionary<String^, String^>^ cfg);
@@ -43,6 +49,6 @@ private:
     void OnDBInitialization(Object^ sender, EventArgs^ e);
     void OnManagementLoadButtonClick(Object^ sender, EventArgs^ e);
     void OnManagementSaveButtonClick(Object^ sender, EventArgs^ e);
-    void OnGroupReportClick(Object^ sender, EventArgs^ e);
-    void OnProjectReportClick(Object^ sender, EventArgs^ e);
+    void OnReportClick(Object^ sender, EventArgs^ e);
+    void OnResultsGridCellEndEdit(Object^ sender, DataGridViewCellEventArgs^ e);
 };

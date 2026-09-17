@@ -29,39 +29,19 @@ String^ DBH::GetSQL(SQLRequestType t)
 {
 	if (t == SQL_SELECT_PERSONS)
 	{
-		return R"(
-			SELECT p.id AS `person id`, p.firstname, p.lastname, g.groupname, s.shortname, p.boss_id
-			FROM persons AS p 
-			INNER JOIN statuses AS s ON p.status = s.id
-			INNER JOIN `groups` AS g ON p.group_id = g.id
-			ORDER BY 1
-		)";
+		return "SELECT * FROM persons";
 	}
 	else if (t == SQL_SELECT_ACTIVITIES)
 	{
-		return R"(
-			SELECT a.id AS `activity id`, p.firstname, p.lastname, a.hours, pr.projectname
-			FROM persons AS p
-			INNER JOIN activities AS a ON p.id = a.owner
-			INNER JOIN projects AS pr ON pr.id = a.project_id
-			ORDER BY 1
-		)";
+		return "SELECT * FROM activities";
 	}
 	else if (t == SQL_SELECT_GROUPS)
 	{
-		return R"(
-			SELECT id AS `group id`, groupname, description
-			FROM `groups`
-			ORDER BY 1
-		)";
+		return "SELECT * FROM `groups`";
 	}
 	else if (t == SQL_SELECT_PROJECTS)
 	{
-		return R"(
-			SELECT id AS 'project id', projectname, description
-			FROM projects
-			ORDER BY 1
-		)";
+		return "SELECT * FROM projects";
 	}
 	else if (t == SQL_SELECT_BOSS_INFO) {
 		return R"(
@@ -75,15 +55,21 @@ String^ DBH::GetSQL(SQLRequestType t)
 	else if (t == SQL_REPORT1)
 	{
 		return R"(
-			SELECT p.id AS pid, a.id AS aid, a.hours, a.project_id
+			SELECT p.id AS pid, a.id AS aid, a.hours, a.project_id, p.group_id, p.firstname, p.lastname, a.type
 			FROM persons AS p, activities AS a 
-			WHERE a.owner = p.id
+			WHERE a.owner = p.id AND p.status = 'ACTIVE'
+			AND p.group_id = ? 
 			ORDER BY 1
 		)";
 	}
 	else if (t == SQL_REPORT2)
 	{
 		return R"(
+			SELECT p.id AS pid, a.id AS aid, a.hours, a.project_id, p.group_id, p.firstname, p.lastname, a.type
+			FROM persons AS p, activities AS a 
+			WHERE a.owner = p.id AND p.status = 'ACTIVE'
+			AND a.project_id = ? 
+			ORDER BY 1
 		)";
 	}
 
@@ -115,20 +101,10 @@ void DBH::ExecuteManyStatements(String^ statements)
 String^ DBH::GetInitSQL()
 {
 	return R"(
-		DROP TABLE IF EXISTS `statuses`;
-		CREATE TABLE `statuses` (
-			`id` int NOT NULL,
-			`shortname` varchar(100) NOT NULL,
-			`description` text NOT NULL,
-			UNIQUE KEY `unique_status_id` (`id`)
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-		INSERT INTO `statuses` VALUES (1,'active','This person is active');
-		INSERT INTO `statuses` VALUES (2,'inactive','This person is inactive');
-
 		DROP TABLE IF EXISTS `activities`;
 		CREATE TABLE `activities` (
 			`id` int NOT NULL,
-			`type` ENUM('NORMAL', 'BUSINESS_TRIP', 'OVERTIME') NOT NULL DEFAULT 'NORMAL',
+			`type` ENUM('NORMAL', 'BUSINESS_TRIP', 'OVERTIME', 'PAID_VACATION', 'NOT_PAID_VACATION', 'BENCH') NOT NULL DEFAULT 'NORMAL',
 			`hours` int NOT NULL,
 			`owner` int NOT NULL,
 			`project_id` int NOT NULL,
@@ -142,7 +118,7 @@ String^ DBH::GetInitSQL()
 			`firstname` varchar(100) NOT NULL,
 			`lastname` varchar(100) NOT NULL,
 			`group_id` int NOT NULL,
-			`status` int NOT NULL,
+			`status` ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
 			`boss_id` int NOT NULL DEFAULT 0,
 			UNIQUE KEY `unique_person_id` (`id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -164,12 +140,6 @@ String^ DBH::GetInitSQL()
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 	)";
 }
-
-//
-// весь код ниже инициализирует пустую БД набором тестовых записей
-//
-
-
 
 String^ DBH::CreateProjectsAndGroups(int groups, int projects)
 {

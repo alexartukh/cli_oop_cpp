@@ -4,6 +4,8 @@
 
 ref class PersonWorker : public Person
 {
-	PersonWorker(int pid);
+public:
+	PersonWorker(int pid, int gid, String^ fn, String^ ln);
+	virtual String^ ToString() override;
 };
 

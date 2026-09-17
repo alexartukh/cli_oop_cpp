@@ -1,12 +1,15 @@
 #pragma once
 
+using namespace System;
+
 ref class Activity
 {
-private:
+protected:
 	int aid;
 	int hours;
 	int projectId;
+	String^ type;
 public:
 	Activity(int aid, int hours, int projectId);
-	int GetValue();
+	virtual String^ ToString() override;
 };
