@@ -242,14 +242,18 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 {
 	Button^ b = safe_cast<Button^>(sender);
 	String^ sql = nullptr;
+	String^ searchParam1 = nullptr;
+
+	PersonManager::MoneyForManager = 5;
+	Person::MoneyPerHour = 20;
 
 	if (b->Tag->Equals(1)) {
-		report1Output->Clear();
 		sql = dbh->GetSQL(SQL_REPORT1);
+		searchParam1 = report1Input->Text;
 	}
 	if (b->Tag->Equals(2)) {
-		report2Output->Clear();
 		sql = dbh->GetSQL(SQL_REPORT2);
+		searchParam1 = report2Input->Text;
 	}
 
 	Dictionary<int, int>^ subsPerBoss = gcnew Dictionary<int, int>();
@@ -272,7 +276,7 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 
 		// читаем все активности и создаем все нужные объекты	
 		OdbcCommand^ cmd = gcnew OdbcCommand(sql, dbh->GetConnection());
-		cmd->Parameters->AddWithValue("filter", report1Input->Text);
+		cmd->Parameters->AddWithValue("filter", searchParam1);
 		OdbcDataReader^ reader = cmd->ExecuteReader();
 		
 		while (reader->Read())
@@ -296,6 +300,7 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 				if (subsPerBoss->ContainsKey(pid)) 
 				{
 					currentPerson = gcnew PersonManager(pid, gid, fn, ln);
+					((PersonManager^)currentPerson)->SetSubs(subsPerBoss[pid]);
 				}
 				else
 				{
@@ -326,16 +331,29 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 		MessageBox::Show("Ошибка: " + ex->Message);
 	}
 
-	if (b->Tag->Equals(1)) {
-		for each (int k in allPersons->Keys) {
-			report1Output->AppendText(allPersons[k]->ToString());
-		}
+	// output
+
+	TextBox^ tb;
+	if (b->Tag->Equals(1)) tb = report1Output;
+	if (b->Tag->Equals(2)) tb = report2Output;
+
+	tb->Clear();
+	for each (int k in allPersons->Keys) {
+		tb->AppendText(allPersons[k]->ToString() + Environment::NewLine);
 	}
-	if (b->Tag->Equals(2)) {
-		for each (int k in allPersons->Keys) {
-			report2Output->AppendText(allPersons[k]->ToString());
-		}
+	tb->AppendText(Environment::NewLine);
+	Decimal total = 0;
+	for each (int k in allPersons->Keys) {
+		auto tuple = allPersons[k]->CalculateMoney();
+		Decimal m = tuple->Item1;
+		String^ log = tuple->Item2;			
+			
+		total = Decimal::Add(m, total);
+		tb->AppendText( log + Environment::NewLine);
 	}
+
+	tb->AppendText("-----------------" + Environment::NewLine);
+	tb->AppendText(total + Environment::NewLine);
 }
 
 void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)

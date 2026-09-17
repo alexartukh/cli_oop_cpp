@@ -8,3 +8,9 @@ String^ ActivityPaid::ToString()
 {
 	return String::Format("[{0}]", this->hours);
 }
+
+int ActivityPaid::getHours()
+{
+	int v = this->Activity::getHours();
+	return v;
+}

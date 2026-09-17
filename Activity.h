@@ -11,5 +11,6 @@ protected:
 	String^ type;
 public:
 	Activity(int aid, int hours, int projectId);
+	virtual int getHours() override;
 	virtual String^ ToString() override;
 };

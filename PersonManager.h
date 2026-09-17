@@ -4,8 +4,14 @@
 
 ref class PersonManager : public Person
 {
+protected:
+	int Subs = 0;
 public:
-	PersonManager(int pid, int gid, String^ fn, String^ ln);
-	virtual String^ ToString() override;
-};
+	static Decimal MoneyForManager;
 
+	PersonManager(int pid, int gid, String^ fn, String^ ln);
+	int GetSubs();
+	void SetSubs(int s);
+	virtual String^ ToString() override;
+	virtual Tuple<Decimal, String^>^ CalculateMoney() override;
+};

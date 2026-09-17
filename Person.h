@@ -13,9 +13,13 @@ protected:
 	String^ fn;
 	String^ ln;
 	List<Activity^>^ aList;
+
+	
 public:
+	static Decimal MoneyPerHour;
+
 	Person(int pid, int gid, String^ fn, String^ ln);
 	void AddActivity(Activity^ a);
-	int CalculateSalary();
+	virtual Tuple<Decimal, String^>^ CalculateMoney() override;
 	virtual String^ ToString() override;
 };	
