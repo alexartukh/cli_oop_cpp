@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Activity.cpp" />
+    <ClCompile Include="ActivityOvertime.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="DBH.cpp" />
     <ClCompile Include="MainForm.cpp" />
@@ -139,6 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Activity.h" />
+    <ClInclude Include="ActivityOvertime.h" />
     <ClInclude Include="DBH.h" />
     <ClInclude Include="MainForm.h" />
     <ClInclude Include="PersonManager.h" />

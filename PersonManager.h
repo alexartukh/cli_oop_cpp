@@ -12,6 +12,7 @@ public:
 	PersonManager(int pid, int gid, String^ fn, String^ ln);
 	int GetSubs();
 	void SetSubs(int s);
+
 	virtual String^ ToString() override;
 	virtual Tuple<Decimal, String^>^ CalculateMoney() override;
 };

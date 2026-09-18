@@ -12,7 +12,7 @@ Person::Person(int pid, int gid, String^ fn, String^ ln)
 	
 }
 
-void Person::AddActivity(Activity^ a)
+void Person::operator + (Activity^ a)
 {
 	this->aList->Add(a);
 }

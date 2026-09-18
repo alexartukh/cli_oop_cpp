@@ -69,12 +69,7 @@ int main(array<String^>^ args)
     }
     catch (OdbcException^ ex)
     {
-        MessageBox::Show(
-            "Не удалось подключиться к БД:\n" + ex->Message,
-            "Ошибка подключения",
-            MessageBoxButtons::OK,
-            MessageBoxIcon::Error
-        );
+        MessageBox::Show("EXCEPTION: " + ex->Message);
         return 1;
     }
 

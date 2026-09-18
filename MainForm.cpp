@@ -3,6 +3,7 @@
 #include "Activity.h"
 #include "ActivityPaid.h"
 #include "ActivityNotPaid.h"
+#include "ActivityOvertime.h"
 
 #include "Person.h"
 #include "PersonWorker.h"
@@ -31,7 +32,7 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	TabControl^ tabs = gcnew TabControl();
 	tabs->Dock = DockStyle::Fill;
 
-	// ---------- Первая закладка ----------
+	// ---------- закладка БД ----------
 	TabPage^ mainPage = gcnew TabPage("БД");
 
 	// Кнопка персон
@@ -78,7 +79,7 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	resultsGrid->MultiSelect = false; // за раз можно выделить только одну строку
 	resultsGrid->CellEndEdit += gcnew DataGridViewCellEventHandler(this, &MainForm::OnResultsGridCellEndEdit);
 
-	// Вертикальная панель слева — фиксированной ширины 200px, во всю высоту страницы.
+	// Вертикальная панель слева — фиксированной ширины во всю высоту страницы.
 	Panel^ leftPanel = gcnew Panel();
 	leftPanel->Dock = DockStyle::Left;
 	leftPanel->Width = 400;
@@ -116,8 +117,10 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 
 	tabs->TabPages->Add(mainPage);
 
-	// ---------- отчеты 1 ----------
-	TabPage^ reportTab1 = gcnew TabPage("Отчеты по группам");
+	// ---------- отчеты ----------
+	TabPage^ reportTab1 = gcnew TabPage("Отчеты");
+
+	// отчеты по группам
 
 	report1Button = gcnew Button();
 	report1Button->Text = "Создать отчет";
@@ -126,84 +129,60 @@ MainForm::MainForm(DBH^ db, Dictionary<String^, String^>^ cfg)
 	report1Button->Click += gcnew EventHandler(this, &MainForm::OnReportClick);
 	report1Button->Tag = 1;
 
-	// Метка и поле ввода — чуть ниже кнопки
 	report1InputLabel = gcnew Label();
 	report1InputLabel->Text = "ID группы";
 	report1InputLabel->Location = Point(10, 60);
 	report1InputLabel->Size = System::Drawing::Size(90, 20);
 
 	report1Input = gcnew TextBox();
-	report1Input->Location = Point(105, 57);
+	report1Input->Location = Point(10, 110);
 	report1Input->Size = System::Drawing::Size(285, 20);
 	report1Input->Text = "1";
 
-	// Панель слева — такой же ширины (400px), как leftPanel на первой вкладке
-	Panel^ report1Panel = gcnew Panel();
-	report1Panel->Dock = DockStyle::Left;
-	report1Panel->Width = 400;
-	report1Panel->Controls->Add(report1Button);
-	report1Panel->Controls->Add(report1InputLabel);
-	report1Panel->Controls->Add(report1Input);
-
-	// Текстовое поле вывода — занимает всю оставшуюся площадь
-	report1Output = gcnew TextBox();
-	report1Output->Multiline = true;
-	report1Output->ReadOnly = true;
-	report1Output->ScrollBars = ScrollBars::Vertical;
-	report1Output->Dock = DockStyle::Fill;
-	// Полное имя System::Drawing::Font обязательно: у Control (через Form)
-	// есть собственное свойство Font, которое иначе перекрывает тип при поиске без квалификации
-	// (та же история, что раньше была с Size и DialogResult).
-	report1Output->Font = gcnew System::Drawing::Font("Consolas", 14);
-
-	// Порядок важен: Fill — первая, Left — последняя (см. комментарий на первой вкладке)
-	reportTab1->Controls->Add(report1Output);
-	reportTab1->Controls->Add(report1Panel);
-
-	tabs->TabPages->Add(reportTab1);
-
-	// ---------- отчеты 2 ----------
-	TabPage^ reportTab2 = gcnew TabPage("Отчеты по проектам");
+	// отчеты по проектам
 
 	report2Button = gcnew Button();
 	report2Button->Text = "Создать отчет";
 	report2Button->Size = System::Drawing::Size(380, 40);
-	report2Button->Location = Point(10, 10);
+	report2Button->Location = Point(10, 160);
 	report2Button->Click += gcnew EventHandler(this, &MainForm::OnReportClick);
 	report2Button->Tag = 2;
 
-	// Метка и поле ввода — чуть ниже кнопки
 	report2InputLabel = gcnew Label();
 	report2InputLabel->Text = "ID проекта";
-	report2InputLabel->Location = Point(10, 60);
+	report2InputLabel->Location = Point(10, 210);
 	report2InputLabel->Size = System::Drawing::Size(90, 20);
 
 	report2Input = gcnew TextBox();
-	report2Input->Location = Point(105, 57);
+	report2Input->Location = Point(10, 260);
 	report2Input->Size = System::Drawing::Size(285, 20);
 	report2Input->Text = "1";
 
-	// Панель слева — такой же ширины (400px), как leftPanel на первой вкладке
-	Panel^ report2Panel = gcnew Panel();
-	report2Panel->Dock = DockStyle::Left;
-	report2Panel->Width = 400;
-	report2Panel->Controls->Add(report2Button);
-	report2Panel->Controls->Add(report2InputLabel);
-	report2Panel->Controls->Add(report2Input);
+	// панель для виджетов обеих отчетов
 
-	// Текстовое поле вывода — занимает всю оставшуюся площадь
-	report2Output = gcnew TextBox();
-	report2Output->Multiline = true;
-	report2Output->ReadOnly = true;
-	report2Output->ScrollBars = ScrollBars::Vertical;
-	report2Output->Dock = DockStyle::Fill;
-	report2Output->Font = gcnew System::Drawing::Font("Consolas", 14);
+	Panel^ reportPanel = gcnew Panel();
+	reportPanel->Dock = DockStyle::Left;
+	reportPanel->Width = 400;
 
-	// Порядок важен: Fill — первая, Left — последняя (см. комментарий на первой вкладке)
-	reportTab2->Controls->Add(report2Output);
-	reportTab2->Controls->Add(report2Panel);
+	reportPanel->Controls->Add(report1Button);
+	reportPanel->Controls->Add(report1InputLabel);
+	reportPanel->Controls->Add(report1Input);
 
-	tabs->TabPages->Add(reportTab2);
+	reportPanel->Controls->Add(report2Button);
+	reportPanel->Controls->Add(report2InputLabel);
+	reportPanel->Controls->Add(report2Input);
+
+	reportOutput = gcnew TextBox();
+	reportOutput->Multiline = true;
+	reportOutput->ReadOnly = true;
+	reportOutput->ScrollBars = ScrollBars::Vertical;
+	reportOutput->Dock = DockStyle::Fill;
+	reportOutput->Font = gcnew System::Drawing::Font("Consolas", 14);
+
+	reportTab1->Controls->Add(reportOutput);
+	reportTab1->Controls->Add(reportPanel);
+
+	tabs->TabPages->Add(reportTab1);
 
 	// ---------- закладка менеджмента ----------    
 	TabPage^ managementTab = gcnew TabPage("Настройки");
@@ -313,35 +292,35 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 			// создаем новую активность в любом случае
 			// используем разные классы в зависимости от типа активности
 			Activity^ a;
-			if (type->Equals("NORMAL") || type->Equals("BUSINESS_TRIP") || type->Equals("OVERTIME") || type->Equals("PAID_VACATION")) {
+			if (type->Equals("NORMAL")) {
 				a = gcnew ActivityPaid(aid, hours, projectId);
 			}
-			else if (type->Equals("BENCH") || type->Equals("NOT_PAID_VACATION")) {
+			else if (type->Equals("OVERTIME")) {
+				a = gcnew ActivityOvertime(aid, hours, projectId);
+			}
+			else if (type->Equals("BENCH")) {
 				a = gcnew ActivityNotPaid(aid, hours, projectId);
 			}
 			else {
 				a = gcnew Activity(aid, hours, projectId);
 			}
 			
-			currentPerson->AddActivity(a);
+			// currentPerson->AddActivity(a);
+			currentPerson + a;
 		}
 	}
 	catch (OdbcException^ ex)
 	{
-		MessageBox::Show("Ошибка: " + ex->Message);
+		MessageBox::Show("EXCEPTION: " + ex->Message);
 	}
 
 	// output
 
-	TextBox^ tb;
-	if (b->Tag->Equals(1)) tb = report1Output;
-	if (b->Tag->Equals(2)) tb = report2Output;
-
-	tb->Clear();
+	reportOutput->Clear();
 	for each (int k in allPersons->Keys) {
-		tb->AppendText(allPersons[k]->ToString() + Environment::NewLine);
+		reportOutput->AppendText(allPersons[k]->ToString() + Environment::NewLine);
 	}
-	tb->AppendText(Environment::NewLine);
+	reportOutput->AppendText(Environment::NewLine);
 	Decimal total = 0;
 	for each (int k in allPersons->Keys) {
 		auto tuple = allPersons[k]->CalculateMoney();
@@ -349,11 +328,11 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 		String^ log = tuple->Item2;			
 			
 		total = Decimal::Add(m, total);
-		tb->AppendText( log + Environment::NewLine);
+		reportOutput->AppendText( log + Environment::NewLine);
 	}
 
-	tb->AppendText("-----------------" + Environment::NewLine);
-	tb->AppendText(total + Environment::NewLine);
+	reportOutput->AppendText("-----------------" + Environment::NewLine);
+	reportOutput->AppendText(total + Environment::NewLine);
 }
 
 void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)
@@ -485,7 +464,7 @@ void MainForm::OnDBDataButtonClick(Object^ sender, EventArgs^ e)
 	}
 	catch (OdbcException^ ex)
 	{
-		MessageBox::Show("Ошибка: " + ex->Message);
+		MessageBox::Show("EXCEPTION: " + ex->Message);
 	}
 }
 
@@ -533,6 +512,6 @@ void MainForm::OnResultsGridCellEndEdit(Object^ sender, DataGridViewCellEventArg
 	}
 	catch (OdbcException^ ex)
 	{
-		MessageBox::Show("Ошибка сохранения: " + ex->Message);
+		MessageBox::Show("EXCEPTION: " + ex->Message);
 	}
 }

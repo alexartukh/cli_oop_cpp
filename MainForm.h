@@ -29,8 +29,7 @@ private:
     DataGridView^ resultsGrid;
     Button^ report1Button;
     Button^ report2Button;
-    TextBox^ report1Output;
-    TextBox^ report2Output;
+    TextBox^ reportOutput;
     Label^ report1InputLabel;
     TextBox^ report1Input;
     Label^ report2InputLabel;
