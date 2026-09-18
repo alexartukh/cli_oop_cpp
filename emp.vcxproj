@@ -148,6 +148,8 @@
     <ClInclude Include="ActivityPaid.h" />
     <ClInclude Include="Person.h" />
     <ClInclude Include="PersonWorker.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="Stats.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="db.ini" />

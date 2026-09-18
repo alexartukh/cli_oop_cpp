@@ -4,11 +4,11 @@ using namespace System;
 
 ref class Activity
 {
-protected:
+private:
 	int aid;
 	int hours;
 	int projectId;
-	String^ type;
+
 public:
 	Activity(int aid, int hours, int projectId);
 

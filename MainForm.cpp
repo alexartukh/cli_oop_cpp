@@ -9,6 +9,9 @@
 #include "PersonWorker.h"
 #include "PersonManager.h"
 
+#include "Utils.h"
+#include "Stats.h"
+
 using namespace System;
 using namespace System::Windows::Forms;
 using namespace System::Drawing;
@@ -302,14 +305,14 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 				a = gcnew ActivityNotPaid(aid, hours, projectId);
 			}
 			else {
-				a = gcnew Activity(aid, hours, projectId);
+				throw gcnew Exception("Unknown Activity Type");
 			}
-			
-			// currentPerson->AddActivity(a);
+
+			// используемый переопределенный оператор +
 			currentPerson + a;
 		}
 	}
-	catch (OdbcException^ ex)
+	catch (Exception^ ex)
 	{
 		MessageBox::Show("EXCEPTION: " + ex->Message);
 	}
@@ -321,18 +324,24 @@ void MainForm::OnReportClick(Object^ sender, EventArgs^ e)
 		reportOutput->AppendText(allPersons[k]->ToString() + Environment::NewLine);
 	}
 	reportOutput->AppendText(Environment::NewLine);
-	Decimal total = 0;
+
+	// Stats<Decimal> — шаблонный класс, накапливает сумму/минимум/максимум/количество
+	// по мере добавления значений, вместо трёх отдельных переменных (total/maxMoney/minMoney).
+	Stats<Decimal> moneyStats;
 	for each (int k in allPersons->Keys) {
 		auto tuple = allPersons[k]->CalculateMoney();
 		Decimal m = tuple->Item1;
-		String^ log = tuple->Item2;			
-			
-		total = Decimal::Add(m, total);
+		String^ log = tuple->Item2;
+
+		moneyStats.Add(m);
+
 		reportOutput->AppendText( log + Environment::NewLine);
 	}
 
 	reportOutput->AppendText("-----------------" + Environment::NewLine);
-	reportOutput->AppendText(total + Environment::NewLine);
+	reportOutput->AppendText("TOTAL : " + moneyStats.GetSum() + Environment::NewLine);
+	reportOutput->AppendText("MAX : " + moneyStats.GetMax() + Environment::NewLine);
+	reportOutput->AppendText("MIN : " + moneyStats.GetMin() + Environment::NewLine);
 }
 
 void MainForm::OnDBInitialization(Object^ sender, EventArgs^ e)
@@ -386,7 +395,7 @@ void MainForm::OnManagementLoadButtonClick(Object^ sender, EventArgs^ e)
 
 		Process^ process = Process::Start(psi);
 		process->StandardInput->Write(File::ReadAllText(dialog->FileName));
-		process->StandardInput->Close();     // сигнал mysql, что ввод закончен
+		process->StandardInput->Close();
 		process->WaitForExit();
 
 		MessageBox::Show("БД загружена из файла " + dialog->FileName);

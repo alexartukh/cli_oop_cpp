@@ -6,7 +6,7 @@ ActivityOvertime::ActivityOvertime(int aid, int hours, int projectId) : Activity
 }
 String^ ActivityOvertime::ToString()
 {
-	return String::Format("[[{0}]]", this->hours);
+	return String::Format("[[{0}]]", this->getHours());
 }
 
 int ActivityOvertime::getHours()

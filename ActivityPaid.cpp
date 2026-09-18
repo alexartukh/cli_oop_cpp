@@ -6,7 +6,7 @@ ActivityPaid::ActivityPaid(int aid, int hours, int projectId) : Activity(aid, ho
 }
 String^ ActivityPaid::ToString()
 {
-	return String::Format("[{0}]", this->hours);
+	return String::Format("[{0}]", this->getHours());
 }
 
 int ActivityPaid::getHours()
